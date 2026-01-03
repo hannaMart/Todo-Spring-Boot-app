@@ -1,0 +1,73 @@
+package com.martysiuk.todoApp.controllers;
+
+import com.martysiuk.todoApp.model.TodoItem;
+import com.martysiuk.todoApp.repositories.TodoItemRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+@Controller
+
+public class TodoController implements CommandLineRunner {
+    private final TodoItemRepository todoItemRepository;
+
+    public TodoController(TodoItemRepository todoItemRepository) {
+        this.todoItemRepository = todoItemRepository;
+    }
+
+    @GetMapping
+    public String index(Model model) {
+        List<TodoItem> allTodos = todoItemRepository.findAll();
+        model.addAttribute("allTodos", allTodos);
+        model.addAttribute("newTodo", new TodoItem());
+
+        return "index";
+    }
+
+    @PostMapping("/add")
+    public String add(@ModelAttribute TodoItem todoItem){
+        todoItemRepository.save(todoItem);
+        return "redirect:/";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteTodoItem(@PathVariable("id") Long id){
+        todoItemRepository.deleteById(id);
+        return "redirect:/";
+    }
+
+    @PostMapping("/removeAll")
+    public String removeAllItems(){
+        todoItemRepository.deleteAll();
+        return "redirect:/";
+    }
+    @PostMapping("/search")
+    public String searchTodoItems (@RequestParam("searchTerm") String searchTerm, Model model){
+        List<TodoItem> allItems = todoItemRepository.findAll();
+        List<TodoItem> searchResults = new ArrayList<>();
+        for(TodoItem item : allItems){
+            if(item.getTitle().toLowerCase().contains(searchTerm.toLowerCase())){
+                searchResults.add(item);
+            }
+        }
+
+        model.addAttribute("allTodos", searchResults);
+        model.addAttribute("newTodo", new TodoItem());
+        model.addAttribute("searchTerm", searchTerm);
+
+        return "index";
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        todoItemRepository.save(new TodoItem("Learn Java"));
+        todoItemRepository.save(new TodoItem("Learn JS"));
+        todoItemRepository.save(new TodoItem("Learn Python"));
+    }
+}
